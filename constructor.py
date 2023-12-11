@@ -15,7 +15,12 @@ from configparser import ConfigParser
 from mysql.connector import Error
 
 def askInput(placeholder):
-    return str(input(placeholder+": "))
+    try:
+        res = float(input(placeholder+": "))
+    except:
+        print("Input numeric values!")
+        return None
+    return res
 
 # saite, no kuras iegūst requestus
 def getData(lat, lon):
@@ -24,8 +29,7 @@ def getData(lat, lon):
         lon = float(lon)
     except:
         return "ERROR: Numeric inputs only!"
-    if lat <= -90 or lat >= 90: return "Invalid latitude"
-    if lon <= -180 or lon >= 180: return "Invalid longitude"
+
     return 'https://nominatim.openstreetmap.org/reverse?format=geocodejson&lat='+str(lat)+'&lon='+str(lon)+'&zoom=18'
 
 def printJSON(json):
@@ -56,7 +60,29 @@ def get_cursor():
 		connection.commit()
 	return connection.cursor()
 
-#####
+def addPlaceToDb(date, pack, lon, lat):
+    cursor = get_cursor()
+    try:
+        date = date.strftime("%Y%m%d%H%M%S")
+        cursor = connection.cursor()
+        result = cursor.execute(
+        """
+        INSERT INTO `location_data` (`date`, `json`, `latitude`, `longitude`)
+        VALUES ('""" + str(date) + """', '""" +json.dumps(pack)+ """', '""" +str(lon)+ """','""" + str(lat) + """') 
+
+        """)
+        connection.commit()
+    except Error as e :
+        logger.error((
+        """
+        INSERT INTO `location_data` (`date`, `json`, `latitude`, `longitude`)
+        VALUES ('""" +str(date)+ """', '""" + json.dumps(pack)+ """', '""" +str(lon)+ """','""" + str(lat) + """') 
+
+        """))
+        logger.error('Problem inserting place values in DB: ' + str(e))
+        pass
+
+##### Žurnalēšanas un config init
 try:
     # Loading logging configuration
     with open('./log_worker.yaml', 'r') as stream:
@@ -91,12 +117,25 @@ def main():
     # laiks tagad
     dt = datetime.now()
     request_date = str(dt.year) + "-" + str(dt.month).zfill(2) + "-" + str(dt.day).zfill(2)  
-    # print("Generated today's date: " + str(request_date))
 
     while (True):
-        # vidzeme university coordinates!!
-        # url = getData(57.541792843039296, 25.42830826616339)
-        url = getData(askInput("Latitude"), askInput("Longitude"))
+        # vidzeme university coordinates --> 57.541792843039296, 25.42830826616339
+        
+        lat = askInput("Latitude")
+        if lat == None:
+            continue
+        if lat <= -90 or lat >= 90: 
+            print("Invalid latitude")
+            continue
+
+        lon = askInput("Longitude")
+        if lat == None:
+            continue
+        if lon <= -180 or lon >= 180: 
+            print("Invalid longitude")
+            continue
+
+        url = getData(lat, lon)
         if url.startswith("https") == False: 
             print(url)
             continue
@@ -104,8 +143,9 @@ def main():
         if logger != None: logger.info("<CI2> Request url: " + url)
         r = urllib3.PoolManager().request("GET", url, headers={'User-Agent': 'Mozilla/5.0'})
         soup = BeautifulSoup(r.data, "html.parser")
-        data = json.loads(soup.text)
-        printJSON(data)
+        pack = json.loads(soup.text)
+        printJSON(pack)
+        addPlaceToDb(dt, pack, lon, lat)
 
 if __name__== "__main__":
     main()
