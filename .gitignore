@@ -1,0 +1,6 @@
+.gitignore
+log/
+log/worker.log
+config.ini
+log_migrate_db.yaml
+log_worker.yaml
