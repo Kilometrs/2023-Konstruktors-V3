@@ -19,7 +19,7 @@ logging.config.dictConfig(config)
 # Creating logger
 logger = logging.getLogger('root')
 
-logger.info('Asteroid DB migration service')
+logger.info('Lokāciju meklēšanas serviss')
 
 # Initiating and reading config values
 logger.info('Loading configuration from file')
