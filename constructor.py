@@ -1,3 +1,6 @@
+# Izstrādājis Jānis Ķiploks
+# IT2022, 12.12.2023.
+
 import urllib3
 from bs4 import BeautifulSoup
 import json
