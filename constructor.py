@@ -1,5 +1,7 @@
 # Izstrādājis Jānis Ķiploks
 # IT2022, 12.12.2023.
+# Izstrādāts Vidzemes Augstskolas kursa ietvaros
+# Supervisor: Kaspars Urbāns
 
 import urllib3
 from bs4 import BeautifulSoup
